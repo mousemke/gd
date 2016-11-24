@@ -1,0 +1,30 @@
+{
+    "presets": [
+        "es2015",
+        "react",
+        "babel-polyfill"
+    ],
+    "plugins": [
+        ["babel-root-slash-import", {
+            "rootPathSuffix": "app"
+        }]
+    ],
+    "env": {
+        "start": {
+            "plugins": [
+                "react-transform"
+            ],
+            "extra": {
+                "react-transform": {
+                    "transforms": [
+                        {
+                            "transform": "react-transform-jsx",
+                            "imports": ["react"],
+                            "locals": ["module"]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
