@@ -1,6 +1,6 @@
 {
-  "name": "gd",
-  "version": "1.1.0",
+  "name": "gd-backup",
+  "version": "1.1.2",
   "description": "Automated Google Drive Backup",
   "main": "./server/server.js",
   "scripts": {
@@ -41,6 +41,6 @@
     "CONTRIBUTE.md",
     "LISENCE.md",
     "server/server.js",
-    "server/config.example.js",
+    "server/config.example.js"
   ]
 }

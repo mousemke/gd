@@ -34,7 +34,7 @@ Scripts
 
 | npm scripts | description
 | --- | :---
-| `npm run serve` 	| starts the dev server at http://localhost:16661
+| `npm run serve` 	| starts the dev server at http://localhost:16666
 | `npm run lint`    | runs eslint for code and code style issues
 | `npm run lintFix` | runs eslint for code and code style issues, fixes minor issues
 | `npm test`     	| runs only linters (for now)
