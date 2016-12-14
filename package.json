@@ -1,20 +1,46 @@
 {
   "name": "gd",
   "version": "1.1.0",
-  "description": "",
-  "main": "server.js",
+  "description": "Automated Google Drive Backup",
+  "main": "./server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm run lint",
     "serve": "mkdir -p ./backup && node ./server/server.js",
     "lint": "eslint ./server/server.js --ext .js",
-    "lintFix": "eslint ./server/server.js --ext .js --fix"
+    "lintFix": "eslint ./server/server.js --ext .js --fix",
+    "postinstall": "cp ./server/config.example.js ./server/config.js"
   },
-  "author": "",
+  "homepage": "https://github.com/mousemke/gd",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mousemke/gd"
+  },
+  "keywords": [
+    "backup",
+    "gd",
+    "google",
+    "drive",
+    "automated",
+    "nightly"
+  ],
+  "bugs": {
+    "url": "https://github.com/mousemke/gd/issues"
+  },
+  "author": "Mouse Braun <mouse@knoblau.ch>",
   "license": "MIT",
   "dependencies": {
     "googleapis": "^14.2.0",
     "jszip": "^3.1.3",
     "node-zip": "^1.1.1",
     "rimraf": "^2.5.4"
-  }
+  },
+  "files": [
+    "CODE_OF_CONDUCT.md",
+    "older_changes.md",
+    "README.md",
+    "CONTRIBUTE.md",
+    "LISENCE.md",
+    "server/server.js",
+    "server/config.example.js",
+  ]
 }
