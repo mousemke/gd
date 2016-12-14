@@ -31,13 +31,13 @@
   "dependencies": {
     "googleapis": "^14.2.0",
     "jszip": "^3.1.3",
-    "node-zip": "^1.1.1",
     "rimraf": "^2.5.4"
   },
   "files": [
     "CODE_OF_CONDUCT.md",
     "older_changes.md",
     "README.md",
+    "package.json",
     "CONTRIBUTE.md",
     "LISENCE.md",
     "server/server.js",

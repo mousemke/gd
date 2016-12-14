@@ -11,7 +11,11 @@ GD backs up your google drive account into a zip file
 
 Tested for node `6.3.1` and npm `3.10.5`
 
-````bash
+
+#### From git:
+
+```bash
+
 # clone project
 git@github.com:mousemke/gd.git
 
@@ -28,8 +32,30 @@ npm test
 
 # start server
 npm run serve
+```
 
-````
+#### From npm:
+
+```bash
+# clone project
+npm i -D gd-backup
+
+# go into folder
+cd node_modules/gd
+
+# install the npm modules
+npm i
+
+# edit config.js and add your account info.  In whatever editor you like
+
+# run tests
+npm test
+
+# start server
+npm run serve
+```
+
+
 
 
 Scripts
@@ -87,6 +113,13 @@ This project adheres to the [Contributor Covenant](http://contributor-covenant.o
 
 
 ### Change log:
+
+
+## 1.1.3
+
++ readme changes
++ dependencies cleaned
+
 
 ## 1.1.2
 
