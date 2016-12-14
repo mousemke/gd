@@ -1,4 +1,6 @@
 
+/* globals require, module, console, setInterval, Promise */
+
 // gangster disciples
 // 1.0.0
 //
@@ -23,6 +25,11 @@ const BASE_DIR          = config.baseDir;
 const IGNORED_FILES     = config.ignoreList;
 
 
+const NOOP  = () =>
+{
+};
+
+
 /**
  * ## GD
  *
@@ -31,6 +38,40 @@ const IGNORED_FILES     = config.ignoreList;
 class GD
 {
     /**
+     * ## buildPaths
+     *
+     * builds the path strings for each file
+     *
+     * @param {Array} files file list
+     * @param {Object} folders forders extracted from files
+     */
+    buildPaths( files, folders )
+    {
+        files.forEach( file =>
+        {
+
+            const parents = file.parents;
+
+            if ( parents && parents.length === 1 )
+            {
+                file.path = this.getPath( folders, parents[ 0 ] );
+
+            }
+            else if ( parents && parents.length > 1 )
+            {
+                throw 'untested scenario';
+            }
+            else
+            {
+                file.path = '/';
+            }
+
+            this.mkdir( file.path.slice( 1 ), `${ROOT_DIR}/${BASE_DIR}` );
+        } );
+    }
+
+
+    /**
      * ## buildZipStructure
      *
      * organizes files and folders in the right structure for the zip file
@@ -38,10 +79,12 @@ class GD
      * @param {Object} zipContext current zip folder
      * @param {Object} fileTree file organizational object
      * @param {String} baseDir curret working directory
+     *
+     * @return {Promise} success status
      */
     buildZipStructure( zipContext, fileTree, baseDir )
     {
-        return new Promise( ( resolve, reject  ) =>
+        return new Promise( resolve =>
         {
             const keys = Object.keys( fileTree );
 
@@ -51,12 +94,12 @@ class GD
                 {
                     const data = fs.readFileSync( `${baseDir}/${file}` );
 
-                    console.log( `read ${file} ` );
+                    console.warn( `read ${file} ` );
                     zipContext.file( file, data );
                 }
                 else
                 {
-                    console.log( `entering directory ${file} ` );
+                    console.warn( `entering directory ${file} ` );
                     const directory = zipContext.folder( file );
 
                     this.buildZipStructure( directory, fileTree[ file ],
@@ -64,7 +107,7 @@ class GD
                 }
             } );
 
-            resolve( zipContext );
+            resolve( true );
         } );
     }
 
@@ -92,7 +135,7 @@ class GD
 
         this.server.listen( config.serverPort );
 
-        console.log( `HTTP Server is started on port ${config.serverPort}` );
+        console.warn( `HTTP Server is started on port ${config.serverPort}` );
 
         this.startBackup();
 
@@ -104,6 +147,8 @@ class GD
      * ## fetchFiles
      *
      * does the actualy api call to get the google drive file list
+     *
+     * @return {Promise} file list
      */
     fetchFiles()
     {
@@ -111,7 +156,7 @@ class GD
         {
             drive.files.list( {
                 fields      : 'files(id, name, mimeType, parents, sharingUser)',
-                auth        : this.auth
+                auth        : this.auth,
             },
             ( err, res ) =>
             {
@@ -153,8 +198,7 @@ class GD
 
                 if ( dir )
                 {
-                    this.getDirectoryFiles( file, `${fullDir}/${file}/`,
-                                                        filesList[ fileDir ] );
+                    this.getDirectoryFiles( file, `${fullDir}/${file}/`, cwd );
                 }
                 else
                 {
@@ -168,23 +212,52 @@ class GD
 
 
     /**
+     * ## getPath
+     *
+     * recursively gets the full path of a file
+     *
+     * @param {Object} folders folders organized by id
+     * @param {String} folderId id reference to the folders object
+     * @param {String} pathRaw recursively built path
+     *
+     * @return {String} path
+     */
+    getPath( folders, folderId, pathRaw = '' )
+    {
+        let path        = pathRaw;
+        const folder    = folders[ folderId ];
+
+        if ( !folder )
+        {
+            return pathRaw;
+        }
+
+        if ( folder && folder.parents )
+        {
+            path = this.getPath( folders, folder.parents[ 0 ], '' );
+        }
+
+        return `${path}/${folder.name}`;
+    }
+
+
+    /**
      * ## mkdir
      *
      * makes directories recursively
      *
      * @param {String} path file path
-     * @param {String} base file path base
+     * @param {String} baseRaw file path base
      *
      * @return {Boolean} finished or not
      */
-    mkdir( path, base )
+    mkdir( path, baseRaw )
     {
-        const folders     = path.split( '/' );
+        const folders   = path.split( '/' );
         const folder    = folders.shift();
+        const base      = `${baseRaw}/${folder}`;
 
-        base = `${base}/${folder}`;
-
-        console.log( 'trying:', base );
+        console.warn( 'trying:', base );
         if ( !fs.existsSync( base ) )
         {
             fs.mkdirSync( base );
@@ -199,11 +272,13 @@ class GD
      *
      * completes the http response
      *
-     * @param {Object} data response data to output
+     * @param {Object} dataRaw response data to output
      * @param {Object} cookies cookies to add to the header (opt)
      */
-    sendResponse( data, cookies )
+    sendResponse( dataRaw, cookies )
     {
+        let data = dataRaw;
+
         if ( typeof data !== 'string' )
         {
             data            = JSON.stringify( data );
@@ -214,7 +289,7 @@ class GD
         const headers     = [
             [ 'access-control-allow-origin', request.headers.origin || '*' ],
             [ 'Content-Type', 'application/json' ],
-            [ 'content-length', data.length ]
+            [ 'content-length', data.length ],
         ];
 
         if ( cookies )
@@ -244,23 +319,21 @@ class GD
      *
      * @param {Object} request
      * @param {Object} response
-     *
-     * @return {Void}
      */
     serverFunction( request, response )
     {
         this.request    = request;
         this.response   = response;
 
-        this.auth.authorize( ( err, tokens ) =>
+        this.auth.authorize( err =>
         {
             if ( err )
             {
                 this.sendResponse( {
-                    err : 'error retrieving auth.authorize'
+                    err : 'error retrieving auth.authorize',
                 } );
 
-                console.log( 'auth err: ', err );
+                console.error( 'auth err: ', err );
 
                 return;
             }
@@ -270,7 +343,7 @@ class GD
                 this.sendResponse( {
                     status      : 'still here!',
                     currentTime : Date.now(),
-                    lastBackup  : this.lastBackup
+                    lastBackup  : this.lastBackup,
                 } );
             }
         } );
@@ -311,7 +384,7 @@ class GD
     {
         this.nextBackup = Date.now() + BACKUP_INTERVAL;
 
-        console.log( 'Starting backup.' );
+        console.warn( 'Starting backup.' );
 
         const files     = this.fetchFiles();
         this.writeFile( files );
@@ -341,8 +414,14 @@ class GD
     }
 
 
-
-
+    /**
+     * ## writeFiles
+     *
+     * writes the google drive files to the drive in their original
+     * directory structure
+     *
+     * @param {Array} files file list from google drive
+     */
     writeFile( files )
     {
         files.then( f =>
@@ -352,46 +431,7 @@ class GD
             const folders = this.sortFolders( files );
 
             files = files.filter( file => !folders[ file.id ] );
-
-
-            files.forEach( file =>
-            {
-
-                const parents = file.parents;
-
-                if ( parents && parents.length === 1 )
-                {
-                    function getPath( folderId, path = '' )
-                    {
-                        const folder = folders[ folderId ];
-
-                        if ( !folder )
-                        {
-                            return path;
-                        }
-
-                        if ( folder && folder.parents )
-                        {
-                            path = getPath( folder.parents[ 0 ], '' );
-                        }
-
-                        return `${path}/${folder.name}`;
-                    }
-
-                    file.path = getPath( parents[ 0 ] );
-
-                }
-                else if ( parents && parents.length > 1 )
-                {
-                    throw 'untested scenario';
-                }
-                else
-                {
-                    file.path = '/';
-                }
-
-                this.mkdir( file.path.slice( 1 ), `${ROOT_DIR}/${BASE_DIR}` );
-            } );
+            this.buildPaths( files, folders );
 
 
             Promise.all( files.map( file =>
@@ -403,14 +443,16 @@ class GD
                     drive.files.get( {
                         auth    : this.auth,
                         fileId  : file.id,
-                        alt    : 'media'
+                        alt    : 'media',
                     } )
-                    .on( 'end', () => {
-                        console.log( `Done retrieving ${file.name}` );
+                    .on( 'end', () =>
+                    {
+                        console.warn( `Done retrieving ${file.name}` );
                         resolve( 'Done' );
                     } )
-                    .on( 'error', ( err ) => {
-                        console.log( 'Error during download', err );
+                    .on( 'error', ( err ) =>
+                    {
+                        console.error( 'Error during download', err );
                         reject( 'error' );
                     } )
                     .pipe( dest );
@@ -439,17 +481,17 @@ class GD
             const next      = this.timestampToDatestamp( this.nextBackup );
 
             zip.generateNodeStream( {
-                streamFiles : true
+                streamFiles : true,
             } )
             .pipe( fs.createWriteStream( `./backup-${nowDate}.zip` ) )
             .on( 'finish', () =>
             {
                 if ( CLEAN_UP )
                 {
-                    rimraf( `${ROOT_DIR}/${BASE_DIR}`, () => {} );
+                    rimraf( `${ROOT_DIR}/${BASE_DIR}`, NOOP );
                 }
 
-                console.log( `./backup-${nowDate}.zip written.  Next backup at ${next}` ); // eslint-disable-line
+                console.warn( `./backup-${nowDate}.zip written.  Next backup at ${next}` ); // eslint-disable-line
             } );
         } );
     }

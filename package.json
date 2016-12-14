@@ -5,9 +5,9 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "mkdir -p ./backup && node server.js",
-    "lint": "eslint ./ --ext .js",
-    "lintFix": "eslint ./ --ext .js --fix"
+    "serve": "mkdir -p ./backup && node ./server/server.js",
+    "lint": "eslint ./server/server.js --ext .js",
+    "lintFix": "eslint ./server/server.js --ext .js --fix"
   },
   "author": "",
   "license": "ISC",
