@@ -8,19 +8,19 @@
 
 Tested for node `6.3.1` and npm `3.10.5`
 
-````js
-// clone project
+````bash
+# clone project
 git@github.com:mousemke/gd.git
 
-// go into folder
+# go into folder
 cd gd
 
-// install the npm modules
+# install the npm modules
 npm i
 
-// edit config.js and add your account info.  In whatever editor you like
+# edit config.js and add your account info.  In whatever editor you like
 
-// run tests
+# run tests
 npm test
 
 // start server
@@ -32,15 +32,13 @@ npm run serve
 Scripts
 =======
 
-`serve`                     // starts the dev server at http://localhost:8007
-
-`deploy`                    // runs the production webpack and sets the env
-
-`lint`                      // runs eslint for code and code style issues
-
-`lintFix`                   // runs eslint for code and code style issues, fixes minor issues
-
-`test`                      // runs only linters (for now)
+| npm scripts | description
+| --- | :---
+| `npm run serve` 	| starts the dev server at http://localhost:8007
+| `npm run deploy`  | runs the production webpack and sets the env
+| `npm run lint`    | runs eslint for code and code style issues
+| `npm run lintFix` | runs eslint for code and code style issues, fixes minor issues
+| `npm test`     	| runs only linters (for now)
 
 
 
