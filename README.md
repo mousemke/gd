@@ -1,7 +1,7 @@
 
 ![gdn23](https://cloud.githubusercontent.com/assets/1480168/21179475/92ec4db2-c1f4-11e6-8c5a-bd74d2f615b2.JPG)
 
-## Google Drive Backup
+## Automated Google Drive Backup
 
 
 ### How to setup the project ###
@@ -10,13 +10,15 @@ Tested for node `6.3.1` and npm `3.10.5`
 
 ````js
 // clone project
-git clone https://github.com/mousemke/gd.git
+git@github.com:mousemke/gd.git
 
 // go into folder
 cd gd
 
 // install the npm modules
 npm i
+
+// edit config.js and add your account info.  In whatever editor you like
 
 // run tests
 npm test
@@ -87,4 +89,13 @@ feature branches - these branches come from dev, are branched for a specific gea
 
 This project adheres to the [Contributor Covenant](http://contributor-covenant.org/). By participating, you are expected to honor this code.
 
-[Layout Engine - Code of Conduct](https://github.com/mousemke/gd/blob/master/CODE_OF_CONDUCT.md)
+[GD - Code of Conduct](https://github.com/mousemke/gd/blob/master/CODE_OF_CONDUCT.md)
+
+
+### Change log:
+
+
+## 1.1.0
+
++ initial commit
+
