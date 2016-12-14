@@ -2,7 +2,6 @@
 /* globals require, module, console, setInterval, Promise */
 
 // gangster disciples
-// 1.1.2
 //
 // api ref: https://developers.google.com/drive/v3/reference/files
 //
