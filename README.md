@@ -40,13 +40,7 @@ Scripts
 
 `lintFix`                   // runs eslint for code and code style issues, fixes minor issues
 
-`test`                      // runs linters, visual and mocha tests in the command line
-
-`test:unit`                 // runs the cli mocha tests
-
-`test:unit:coverage`        // tests and generates a coverage report and opens a browser window to show the results
-
-`test:unit:coverage:cli`    // tests and generates a coverage report
+`test`                      // runs only linters (for now)
 
 
 
