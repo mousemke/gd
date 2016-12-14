@@ -11,16 +11,15 @@ const JsZip         = require( 'jszip' );
 const google        = require( 'googleapis' );
 const rimraf        = require( 'rimraf' );
 const config        = require( './config.js' );
-const packageJSON   = require( './package.json' );
 
 const key           = config.serviceAcct;
 const auth          = google.auth;
 const drive         = google.drive( 'v3' );
-const filter        = f => f;
 
-const CLEAN_UP      = false;
-const ROOT_DIR      = '.';
-const BASE_DIR      = 'backup';
+const CLEAN_UP          = config.cleanDirectory;
+const BACKUP_INTERVAL   = config.backupInterval;
+const ROOT_DIR          = '.';
+const BASE_DIR          = 'backup';
 
 const IGNORED_FILES = [
     '.DS_Store'
@@ -41,9 +40,6 @@ class GD
      */
     constructor()
     {
-        this.package    = packageJSON;
-
-        let version     = this.version = this.package.version;
         this.config     = config;
         this.url        = url;
         this.lastBackup = null;
@@ -55,11 +51,11 @@ class GD
 
         this.server.listen( config.serverPort );
 
-        console.log( `HTTP Server is started on port ${config.serverPort} (${version})` );
+        console.log( `HTTP Server is started on port ${config.serverPort}` );
 
-        const files     = this.fetchFiles();
+        this.startBackup();
 
-        this.writeFile( files );
+        this.backupInterval = setInterval( this.startBackup, BACKUP_INTERVAL );
     }
 
 
@@ -187,6 +183,31 @@ class GD
                 } );
             }
         } );
+    }
+
+
+    startBackup()
+    {
+        this.nextBackup = Date.now() + BACKUP_INTERVAL;
+
+        console.log( `Starting backup.` );
+
+        const files     = this.fetchFiles();
+        this.writeFile( files );
+    }
+
+
+    timestampToDatestamp( stamp = Date.now() )
+    {
+        const dateObj   = new Date( stamp );
+
+        const month     = dateObj.getUTCMonth() + 1;
+        const day       = dateObj.getUTCDate();
+        const year      = dateObj.getUTCFullYear();
+        const minutes   = dateObj.getUTCMinutes();
+        const hours     = dateObj.getUTCHours();
+
+        return `${day}-${month}-${year}-${hours}${minutes}`;
     }
 
 
@@ -328,10 +349,14 @@ class GD
 
         checkFile( zip, fileTree, ROOT_DIR ).then( () =>
         {
+            const now       = this.lastBackup = Date.now();
+            const nowDate   = this.timestampToDatestamp( now );
+            const next      = this.timestampToDatestamp( this.nextBackup );
+
             zip.generateNodeStream( {
                 streamFiles : true
             } )
-            .pipe( fs.createWriteStream( './backup.zip' ) )
+            .pipe( fs.createWriteStream( `./backup-${nowDate}.zip` ) )
             .on( 'finish', () =>
             {
                 if ( CLEAN_UP )
@@ -339,8 +364,7 @@ class GD
                     rimraf( `${ROOT_DIR}/${BASE_DIR}`, () => {} );
                 }
 
-                this.lastBackup = Date.now();
-                console.log( './backup.zip written.' );
+                console.log( `./backup-${nowDate}.zip written.  Next backup at ${next}` );
             } );
         } );
     }
