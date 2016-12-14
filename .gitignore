@@ -5,4 +5,4 @@ node_modules/
 
 config.js
 backup/
-backup.zip
+backup-*.zip
