@@ -257,9 +257,9 @@ class GD
         const folder    = folders.shift();
         const base      = `${baseRaw}/${folder}`;
 
-        console.warn( 'trying:', base );
         if ( !fs.existsSync( base ) )
         {
+            console.warn( 'Making directory:', base );
             fs.mkdirSync( base );
         }
 
@@ -489,6 +489,7 @@ class GD
                 if ( CLEAN_UP )
                 {
                     rimraf( `${ROOT_DIR}/${BASE_DIR}`, NOOP );
+                    console.warn( `Temporary directory ${ROOT_DIR}/${BASE_DIR} removed` );
                 }
 
                 console.warn( `./backup-${nowDate}.zip written.  Next backup at ${next}` ); // eslint-disable-line
