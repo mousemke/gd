@@ -23,7 +23,7 @@ npm i
 # run tests
 npm test
 
-// start server
+# start server
 npm run serve
 
 ````
