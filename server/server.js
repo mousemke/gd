@@ -2,9 +2,11 @@
 /* globals require, module, console, setInterval, Promise */
 
 // gangster disciples
-// 1.0.0
+// 1.1.2
 //
-// @author Mouse Braun <mouse@styla.com>
+// api ref: https://developers.google.com/drive/v3/reference/files
+//
+// @author Mouse Braun <mouse@knoblau.ch>
 
 const http          = require( 'http' );
 const fs            = require( 'fs' );
