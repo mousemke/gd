@@ -18,12 +18,9 @@ const drive         = google.drive( 'v3' );
 
 const CLEAN_UP          = config.cleanDirectory;
 const BACKUP_INTERVAL   = config.backupInterval;
-const ROOT_DIR          = '.';
-const BASE_DIR          = 'backup';
-
-const IGNORED_FILES = [
-    '.DS_Store'
-];
+const ROOT_DIR          = config.rootDir;
+const BASE_DIR          = config.baseDir;
+const IGNORED_FILES     = config.ignoreList;
 
 
 /**
@@ -34,9 +31,48 @@ const IGNORED_FILES = [
 class GD
 {
     /**
+     * ## buildZipStructure
+     *
+     * organizes files and folders in the right structure for the zip file
+     *
+     * @param {Object} zipContext current zip folder
+     * @param {Object} fileTree file organizational object
+     * @param {String} baseDir curret working directory
+     */
+    buildZipStructure( zipContext, fileTree, baseDir )
+    {
+        return new Promise( ( resolve, reject  ) =>
+        {
+            const keys = Object.keys( fileTree );
+
+            keys.forEach( file =>
+            {
+                if ( fileTree[ file ] === true )
+                {
+                    const data = fs.readFileSync( `${baseDir}/${file}` );
+
+                    console.log( `read ${file} ` );
+                    zipContext.file( file, data );
+                }
+                else
+                {
+                    console.log( `entering directory ${file} ` );
+                    const directory = zipContext.folder( file );
+
+                    this.buildZipStructure( directory, fileTree[ file ],
+                                                        `${baseDir}/${file}` );
+                }
+            } );
+
+            resolve( zipContext );
+        } );
+    }
+
+
+    /**
      * ## constructor
      *
-     * starts the server and listeners
+     * starts the server and listeners, as well as setting the backup interval
      */
     constructor()
     {
@@ -44,10 +80,15 @@ class GD
         this.url        = url;
         this.lastBackup = null;
 
-        this.auth       = new auth.JWT( key.client_email, null, key.private_key, config.scopes, null );
+        this.auth       = new auth.JWT( key.client_email,
+                                        null,
+                                        key.private_key,
+                                        config.scopes,
+                                        null );
 
         this.http       = http;
-        this.server     = this.http.createServer( this.serverFunction.bind( this ) );
+        this.server     = this.http.createServer(
+                                            this.serverFunction.bind( this ) );
 
         this.server.listen( config.serverPort );
 
@@ -59,6 +100,11 @@ class GD
     }
 
 
+    /**
+     * ## fetchFiles
+     *
+     * does the actualy api call to get the google drive file list
+     */
     fetchFiles()
     {
         return new Promise( ( resolve, reject ) =>
@@ -82,6 +128,18 @@ class GD
     }
 
 
+    /**
+     * ## getDirectoryFiles
+     *
+     * reads the file structure to see if something is a file or directory,
+     * then builds accordingly
+     *
+     * @param {String} fileDir file path
+     * @param {String} fullDir full path
+     * @param {Object} filesList recirsive file container.  starts empty
+     *
+     * @return {Object} filesList
+     */
     getDirectoryFiles( fileDir, fullDir, filesList = {} )
     {
         const files = fs.readdirSync( fullDir );
@@ -91,11 +149,12 @@ class GD
         {
             if ( IGNORED_FILES.indexOf( file ) === -1 )
             {
-                const isDir = fs.lstatSync( `${fullDir}/${file}` ).isDirectory();
+                const dir = fs.lstatSync( `${fullDir}/${file}` ).isDirectory();
 
-                if ( isDir )
+                if ( dir )
                 {
-                    this.getDirectoryFiles( file, `${fullDir}/${file}/`, filesList[ fileDir ] );
+                    this.getDirectoryFiles( file, `${fullDir}/${file}/`,
+                                                        filesList[ fileDir ] );
                 }
                 else
                 {
@@ -105,6 +164,33 @@ class GD
         } );
 
         return filesList;
+    }
+
+
+    /**
+     * ## mkdir
+     *
+     * makes directories recursively
+     *
+     * @param {String} path file path
+     * @param {String} base file path base
+     *
+     * @return {Boolean} finished or not
+     */
+    mkdir( path, base )
+    {
+        const folders     = path.split( '/' );
+        const folder    = folders.shift();
+
+        base = `${base}/${folder}`;
+
+        console.log( 'trying:', base );
+        if ( !fs.existsSync( base ) )
+        {
+            fs.mkdirSync( base );
+        }
+
+        return !folders.length || this.mkdir( folders.join( '/' ), base );
     }
 
 
@@ -123,9 +209,9 @@ class GD
             data            = JSON.stringify( data );
         }
 
-        let response    = this.response;
-        let request     = this.request;
-        let headers     = [
+        const response    = this.response;
+        const request     = this.request;
+        const headers     = [
             [ 'access-control-allow-origin', request.headers.origin || '*' ],
             [ 'Content-Type', 'application/json' ],
             [ 'content-length', data.length ]
@@ -133,9 +219,10 @@ class GD
 
         if ( cookies )
         {
-            for ( let prop in cookies )
+            for ( const prop in cookies )
             {
-                headers.push( [ 'Set-Cookie', `${prop}=${cookies[ prop ]};Path=/;` ] );
+                headers.push( [ 'Set-Cookie',
+                                    `${prop}=${cookies[ prop ]};Path=/;` ] );
             }
         }
 
@@ -169,8 +256,12 @@ class GD
         {
             if ( err )
             {
-                this.sendResponse( { err : 'error retrieving auth.authorize' } );
+                this.sendResponse( {
+                    err : 'error retrieving auth.authorize'
+                } );
+
                 console.log( 'auth err: ', err );
+
                 return;
             }
 
@@ -186,17 +277,56 @@ class GD
     }
 
 
+    /**
+     * ## sortFolders
+     *
+     * from the google drive files list, this sorts out only the folders
+     *
+     * @param {Array} files list of files from GD
+     *
+     * @return {Object} collected folders
+     */
+    sortFolders( files )
+    {
+        const folders = {};
+
+        files.forEach( folder =>
+        {
+            if ( folder.mimeType === 'application/vnd.google-apps.folder' )
+            {
+                folders[ folder.id ] = folder;
+            }
+        } );
+
+        return folders;
+    }
+
+
+    /**
+     * ## startBackup
+     *
+     * starts the thing.  called at the end of the constructor and on interval
+     */
     startBackup()
     {
         this.nextBackup = Date.now() + BACKUP_INTERVAL;
 
-        console.log( `Starting backup.` );
+        console.log( 'Starting backup.' );
 
         const files     = this.fetchFiles();
         this.writeFile( files );
     }
 
 
+    /**
+     * ## timestampToDatestamp
+     *
+     * formats a supplied timestamp into a human readable date
+     *
+     * @param {Number} stamp timestamp of Date.now()
+     *
+     * @return {String} day-month-year-hourminute
+     */
     timestampToDatestamp( stamp = Date.now() )
     {
         const dateObj   = new Date( stamp );
@@ -211,20 +341,15 @@ class GD
     }
 
 
+
+
     writeFile( files )
     {
         files.then( f =>
         {
             let { files }   = f;
-            const folders   = {};
 
-            files.forEach( folder =>
-            {
-                if ( folder.mimeType === 'application/vnd.google-apps.folder' )
-                {
-                    folders[ folder.id ] = folder;
-                }
-            } );
+            const folders = this.sortFolders( files );
 
             files = files.filter( file => !folders[ file.id ] );
 
@@ -265,23 +390,7 @@ class GD
                     file.path = '/';
                 }
 
-                function mkdir( path, base )
-                {
-                    let folders     = path.split( '/' );
-                    const folder    = folders.shift();
-
-                    base = `${base}/${folder}`;
-
-                    console.log( 'trying:', base )
-                    if ( !fs.existsSync( base ) )
-                    {
-                        fs.mkdirSync( base );
-                    }
-
-                    return !folders.length || mkdir( folders.join( '/' ), base );
-                }
-
-                mkdir( file.path.slice( 1 ), `${ROOT_DIR}/${BASE_DIR}` );
+                this.mkdir( file.path.slice( 1 ), `${ROOT_DIR}/${BASE_DIR}` );
             } );
 
 
@@ -289,22 +398,20 @@ class GD
             {
                 return new Promise( ( resolve, reject ) =>
                 {
-                    const dest = fs.createWriteStream( `${ROOT_DIR}/${BASE_DIR}${file.path}/${file.name}` );
+                    const dest = fs.createWriteStream( `${ROOT_DIR}/${BASE_DIR}${file.path}/${file.name}` ); // eslint-disable-line
 
                     drive.files.get( {
                         auth    : this.auth,
                         fileId  : file.id,
                         alt    : 'media'
                     } )
-                    .on( 'end', function()
-                    {
+                    .on( 'end', () => {
                         console.log( `Done retrieving ${file.name}` );
                         resolve( 'Done' );
                     } )
-                    .on( 'error', function( err )
-                    {
-                      console.log( 'Error during download', err );
-                      reject( 'error' );
+                    .on( 'error', ( err ) => {
+                        console.log( 'Error during download', err );
+                        reject( 'error' );
                     } )
                     .pipe( dest );
                 } );
@@ -313,41 +420,19 @@ class GD
     }
 
 
+    /**
+     * ## zipFile
+     *
+     * after file data is collected, this writes the zip file and deletes the
+     * origin directory
+     */
     zipFile()
     {
-        function checkFile( zipContext, fileTree, baseDir )
-        {
-            return new Promise( ( resolve, reject  ) =>
-            {
-                const keys = Object.keys( fileTree );
-
-                keys.forEach( file =>
-                {
-                    if ( fileTree[ file ] === true )
-                    {
-                        const data = fs.readFileSync( `${baseDir}/${file}` );
-
-                        console.log( `read ${file} ` );
-                        zipContext.file( file, data );
-                    }
-                    else
-                    {
-                        console.log( `entering directory ${file} ` );
-                        const directory = zipContext.folder( file );
-
-                        checkFile( directory, fileTree[ file ], `${baseDir}/${file}` );
-                    }
-                } );
-
-                resolve( zipContext );
-            } );
-        }
-
-
-        const fileTree  = this.getDirectoryFiles( BASE_DIR, `${ROOT_DIR}/${BASE_DIR}` );
+        const fileTree  = this.getDirectoryFiles( BASE_DIR,
+                                                    `${ROOT_DIR}/${BASE_DIR}` );
         const zip       = new JsZip();
 
-        checkFile( zip, fileTree, ROOT_DIR ).then( () =>
+        this.buildZipStructure( zip, fileTree, ROOT_DIR ).then( () =>
         {
             const now       = this.lastBackup = Date.now();
             const nowDate   = this.timestampToDatestamp( now );
@@ -364,11 +449,11 @@ class GD
                     rimraf( `${ROOT_DIR}/${BASE_DIR}`, () => {} );
                 }
 
-                console.log( `./backup-${nowDate}.zip written.  Next backup at ${next}` );
+                console.log( `./backup-${nowDate}.zip written.  Next backup at ${next}` ); // eslint-disable-line
             } );
         } );
     }
-};
+}
 
 
 module.exports = new GD();

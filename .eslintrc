@@ -1,5 +1,4 @@
 {
-    "parser": "babel-eslint",
     "parserOptions": {
         "ecmaVersion": 6,
         "sourceType": "module",
@@ -8,11 +7,7 @@
         }
     },
     "extends": [
-        "eslint:recommended",
-        "plugin:react/recommended"
-    ],
-    "plugins": [
-        "react"
+        "eslint:recommended"
     ],
     "rules": {
         "array-bracket-spacing": [ 2, "always" ],
