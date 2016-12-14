@@ -3,6 +3,4 @@ node_modules/
 .DS_Store
 *.sublime-*
 
-coverage/
-dist/
-index.html
+config.js
