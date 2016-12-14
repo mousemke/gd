@@ -73,7 +73,6 @@ class GD
             },
             ( err, res ) =>
             {
-                // console.log( 'res', res )
                 if ( err )
                 {
                     reject( err );
@@ -329,14 +328,16 @@ class GD
 
         checkFile( zip, fileTree, ROOT_DIR ).then( () =>
         {
-            // console.log( zip )
             zip.generateNodeStream( {
                 streamFiles : true
             } )
             .pipe( fs.createWriteStream( './backup.zip' ) )
             .on( 'finish', () =>
             {
-                rimraf( `${ROOT_DIR}/${BASE_DIR}`, () => {} );
+                if ( CLEAN_UP )
+                {
+                    rimraf( `${ROOT_DIR}/${BASE_DIR}`, () => {} );
+                }
 
                 this.lastBackup = Date.now();
                 console.log( './backup.zip written.' );

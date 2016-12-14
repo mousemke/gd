@@ -4,3 +4,5 @@ node_modules/
 *.sublime-*
 
 config.js
+backup/
+backup.zip
