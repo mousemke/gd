@@ -85,6 +85,10 @@ This project adheres to the [Contributor Covenant](http://contributor-covenant.o
 
 ### Change log:
 
+## 1.1.2
+
++ documentation and publishing info changes
+
 
 ## 1.1.0
 
