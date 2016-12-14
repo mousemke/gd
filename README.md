@@ -4,6 +4,9 @@
 ## Automated Google Drive Backup
 
 
+GD backs up your google drive account into a zip file
+
+
 ### How to setup the project ###
 
 Tested for node `6.3.1` and npm `3.10.5`
