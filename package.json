@@ -10,7 +10,7 @@
     "lintFix": "eslint ./server/server.js --ext .js --fix"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "googleapis": "^14.2.0",
     "jszip": "^3.1.3",
